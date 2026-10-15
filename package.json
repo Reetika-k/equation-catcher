@@ -1,0 +1,15 @@
+{
+  "name": "equation-catcher",
+  "version": "0.1.0",
+  "description": "Vibe Coding Challenge capstone: a browser game where you catch the number that solves the equation",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node --test tests/game.test.mjs",
+    "test:e2e": "node tests/e2e-browser.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
