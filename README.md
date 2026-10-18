@@ -38,6 +38,17 @@ node tests/e2e-browser.mjs   # browser play test; needs Chrome with --headless=n
 
 The browser test starts a game with `?seed=7`, presses the keys, auto-plays level 1, checks level-up, pause, mute, both loss conditions, restart, the saved high score and the phone layout, and saves screenshots to `docs/screenshots/`. Results and the bugs found are in [docs/TESTING.md](docs/TESTING.md).
 
+## Game dashboard
+
+[`reports/dashboard.html`](reports/dashboard.html) is a self-contained page built from the game's own code and recorded files: the level design table, a seeded audit of 15,000 generated equations (stated answers always solve them, decoys never do), a difficulty curve measured with two scripted players over 200 seeded games each, the logic-test run, the recorded browser play test, the findings table and screenshots. Nothing in it is estimated.
+
+```bash
+npm run test:tap     # records the logic-test run to tests/results/unit-latest.tap
+npm run dashboard    # rebuilds reports/dashboard.html (about 1 s; no dependencies)
+```
+
+Once GitHub Pages is on, the page is served at `https://reetika-k.github.io/equation-catcher/reports/dashboard.html`.
+
 ## Design
 
 A UI/UX pass after the first playable version turned the phone-sized column into a responsive game shell (help · play area · live stats on desktop, a compact single column on phones), modal cards for every screen with the missed answer and accuracy on game over, a timer ring, a Fredoka/Nunito type system and reduced-motion support. The audit, tokens, layouts, components and states are in [docs/DESIGN.md](docs/DESIGN.md); before/after screenshots in `docs/screenshots/`.

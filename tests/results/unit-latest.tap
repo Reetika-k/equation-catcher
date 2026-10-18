@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: equations: every level produces equations whose stated answer is the only solution among the choices
+ok 1 - equations: every level produces equations whose stated answer is the only solution among the choices
+  ---
+  duration_ms: 3.692875
+  type: 'test'
+  ...
+# Subtest: equations: level forms match the concept (one-step / two-step / both sides)
+ok 2 - equations: level forms match the concept (one-step / two-step / both sides)
+  ---
+  duration_ms: 0.172916
+  type: 'test'
+  ...
+# Subtest: equations are reproducible with a seed and vary without one
+ok 3 - equations are reproducible with a seed and vary without one
+  ---
+  duration_ms: 0.220625
+  type: 'test'
+  ...
+# Subtest: game: start resets score, lives and level and shows an equation
+ok 4 - game: start resets score, lives and level and shows an equation
+  ---
+  duration_ms: 0.146333
+  type: 'test'
+  ...
+# Subtest: game: keyboard input moves the basket and it stays inside the screen
+ok 5 - game: keyboard input moves the basket and it stays inside the screen
+  ---
+  duration_ms: 0.391667
+  type: 'test'
+  ...
+# Subtest: game: catching the correct number scores and gives a new equation
+ok 6 - game: catching the correct number scores and gives a new equation
+  ---
+  duration_ms: 0.107334
+  type: 'test'
+  ...
+# Subtest: game: catching a decoy or bomb costs a life; 0 lives → lost
+ok 7 - game: catching a decoy or bomb costs a life; 0 lives → lost
+  ---
+  duration_ms: 0.09425
+  type: 'test'
+  ...
+# Subtest: game: timer running out ends the game
+ok 8 - game: timer running out ends the game
+  ---
+  duration_ms: 0.048958
+  type: 'test'
+  ...
+# Subtest: game: clearing a level adds a time bonus, then next level, then win after level 3
+ok 9 - game: clearing a level adds a time bonus, then next level, then win after level 3
+  ---
+  duration_ms: 0.154792
+  type: 'test'
+  ...
+# Subtest: game: the correct answer is guaranteed to appear within three spawns
+ok 10 - game: the correct answer is guaranteed to appear within three spawns
+  ---
+  duration_ms: 0.113
+  type: 'test'
+  ...
+# Subtest: game: objects that fall past the bottom are removed; a missed correct answer emits 'miss'
+ok 11 - game: objects that fall past the bottom are removed; a missed correct answer emits 'miss'
+  ---
+  duration_ms: 0.120875
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 57.016625

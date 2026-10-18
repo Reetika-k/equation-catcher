@@ -19,3 +19,4 @@ Netlify and Vercel also work: connect the repository or drag-and-drop the folder
 - Open the URL in two browsers (for example Chrome and Safari) and on a phone; play through Level 1 and check the touch buttons.
 - Run the browser play test against the live URL: `node tests/e2e-browser.mjs https://reetika-k.github.io/equation-catcher/`
 - Paste the URL into `README.md` and section 15 of `docs/CAPSTONE_DOCUMENTATION.md`.
+- Open `https://reetika-k.github.io/equation-catcher/reports/dashboard.html`: the game dashboard is a static file in `reports/` (rebuild with `npm run dashboard` before pushing).
