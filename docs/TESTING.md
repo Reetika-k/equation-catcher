@@ -48,6 +48,8 @@ Run 1 (2026-09-28 22:08): **17 / 18** – scenario 8 failed because the test rea
 
 After the UI/UX redesign (`docs/DESIGN.md`), the same play test was run again without modification: **run 3: 17 / 18** – the only failure was the test's assumption that the start card's heading is the game title (the title moved to the header; the card now says "Ready?"). The check was updated to look at the brand title and the card title; **run 4: 18 / 18**, no JavaScript errors. The logic tests are unaffected (11 / 11). Screenshots: `06-desktop-start.png`, `07-phone-start.png`, `08-desktop-playing.png`, `09-desktop-gameover.png`; the play-test captures 02–05 were regenerated on the new design.
 
+**Against the live site (2026-10-22):** `node tests/e2e-browser.mjs https://reetika-k.github.io/equation-catcher/` → **18 / 18** on three runs in a row, after the two test fixes F7 and F8 below.
+
 ## 4. Failures found and what was changed
 
 | # | Problem | Why | Fix | Type |
@@ -58,6 +60,8 @@ After the UI/UX redesign (`docs/DESIGN.md`), the same play test was run again wi
 | F5 | Redesign: start-card heading check failed | The title moved from the card to the header | Test checks the brand title and that the card has a title | Test |
 | F6 | Timer ring reset to 60 on the game-over screen | HUD treated all non-playing screens like the start screen | End screens now freeze the final time value | UI |
 | F4 | Auto-player lost two lives in Level 1 | The test's dodge logic is crude when a decoy falls close to the correct number | Accepted: the test only needs to clear the level; a human dodges better | Test |
+| F7 | Live-site run: "arrow key moves the basket" failed in 2 of 3 runs | Each key was held for a fixed 150 ms, which can fall between two frames on a busy machine | Test holds the key until the basket moves (up to 5 s); no game change | Test |
+| F8 | Live-site run: auto-player lost Level 1 once | It steered from outside the page every 60 ms; when the browser stalled, numbers fell past between updates | Steering now runs inside the page on every animation frame | Test |
 
 ## 5. Playability observations (from watching the runs and screenshots)
 

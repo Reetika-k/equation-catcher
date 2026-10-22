@@ -81,7 +81,7 @@ The separation matters: `game.js` and `equations.js` have no DOM access, so 11 a
 ## 9. Working prototype
 
 - Local: `npm start` → http://localhost:8080
-- Public URL: _(add after deployment – see `docs/DEPLOYMENT.md`)_
+- Public URL: https://reetika-k.github.io/equation-catcher/ (game dashboard: https://reetika-k.github.io/equation-catcher/reports/dashboard.html)
 - Screenshots (headless Chrome): first version `docs/screenshots/01-start.png` … `05-mobile.png`; redesigned version `06-desktop-start.png`, `07-phone-start.png`, `08-desktop-playing.png`, `09-desktop-gameover.png` (the play-test captures 02–05 are regenerated on the new design)
 - Demo flow: `docs/DEMO_SCRIPT.md`
 
@@ -117,5 +117,5 @@ Leaderboard (needs a small backend), power-ups (slow-motion, wider basket), achi
 ## 15. Project demo
 
 - Demo script: `docs/DEMO_SCRIPT.md`
-- Public URL: _(add after deployment)_
-- Repository: _(add GitHub URL)_
+- Public URL: https://reetika-k.github.io/equation-catcher/
+- Repository: https://github.com/Reetika-k/equation-catcher

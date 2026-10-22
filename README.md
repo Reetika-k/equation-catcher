@@ -1,5 +1,7 @@
 # Equation Catcher
 
+> **Play online:** https://reetika-k.github.io/equation-catcher/ · **Game dashboard:** https://reetika-k.github.io/equation-catcher/reports/dashboard.html · **Repository:** https://github.com/Reetika-k/equation-catcher
+
 **Vibe Coding Challenge capstone – a browser game built and hosted with HTML, CSS and JavaScript.**
 IIT Patna AI/ML capstone, Project 2: *Vibe Coding Challenge: Build and Host Your Own Online Video Game*.
 
@@ -47,7 +49,7 @@ npm run test:tap     # records the logic-test run to tests/results/unit-latest.t
 npm run dashboard    # rebuilds reports/dashboard.html (about 1 s; no dependencies)
 ```
 
-Once GitHub Pages is on, the page is served at `https://reetika-k.github.io/equation-catcher/reports/dashboard.html`.
+Live: https://reetika-k.github.io/equation-catcher/reports/dashboard.html
 
 ## Design
 
@@ -69,7 +71,7 @@ serve.mjs         local static server
 
 ## Deployment
 
-Static site: any host works. GitHub Pages steps are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Live URL: _to be added after deployment_.
+Static site: any host works. GitHub Pages steps are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Live URL: https://reetika-k.github.io/equation-catcher/
 
 ## Credits
 
