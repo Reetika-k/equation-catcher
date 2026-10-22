@@ -21,6 +21,8 @@ const js = async (expr) => { const r = await send("Runtime.evaluate", { expressi
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const waitFor = async (expr, label, ms = 15000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await js(expr)) return; await sleep(100); } throw new Error("timeout: " + label); };
 const key = async (k, code) => { await send("Input.dispatchKeyEvent", { type: "keyDown", key: k, code }); await sleep(150); await send("Input.dispatchKeyEvent", { type: "keyUp", key: k, code }); };
+// Hold a key until a condition holds (up to ms). A fixed 150 ms press could fall between two frames on a busy machine.
+const holdUntil = async (k, code, cond, ms = 5000) => { await send("Input.dispatchKeyEvent", { type: "keyDown", key: k, code }); const t0 = Date.now(); while (Date.now() - t0 < ms && !(await js(cond))) await sleep(50); await send("Input.dispatchKeyEvent", { type: "keyUp", key: k, code }); };
 const shot = async (name) => { const r = await send("Page.captureScreenshot", { format: "png" }); fs.writeFileSync(path.join(shots, name), Buffer.from(r.result.data, "base64")); };
 const results = []; const check = (name, ok, detail = "") => { results.push({ name, ok, detail }); console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? " — " + String(detail).replace(/\s+/g, " ").slice(0, 140) : ""}`); };
 
@@ -38,27 +40,31 @@ try {
   check("an equation is shown", /=/.test(eq), eq);
 
   const x0 = await js(`window.__game.state.basket.x`);
-  await key("ArrowRight", "ArrowRight");
+  await holdUntil("ArrowRight", "ArrowRight", `window.__game.state.basket.x > ${x0} + 5`);
   const x1 = await js(`window.__game.state.basket.x`);
-  await key("a", "KeyA");
+  await holdUntil("a", "KeyA", `window.__game.state.basket.x < ${x1} - 5`);
   const x2 = await js(`window.__game.state.basket.x`);
   check("arrow key moves the basket right, A moves it left", x1 > x0 && x2 < x1, `${x0.toFixed(0)} → ${x1.toFixed(0)} → ${x2.toFixed(0)}`);
   await sleep(1500); await shot("02-playing.png");
 
   // Auto-play level 1: keep the basket under the correct number, dodge everything else.
+  // The steering runs inside the page on every animation frame. (It used to run from here every 60 ms over
+  // the DevTools connection; on a busy machine objects fell past between two updates and the bot lost.)
+  await js(`(() => { window.__bot = true; const steer = () => { const st = window.__game.state;
+      if (st.screen === "playing") { const b = st.basket; const correct = st.objects.filter(o => o.kind === "correct").sort((p, q) => q.y - p.y)[0];
+        const threats = st.objects.filter(o => o.kind !== "correct" && o.y > b.y - 160);
+        let tx = correct ? correct.x : b.x;
+        for (const t of threats) if (Math.abs(t.x - tx) < 70) tx = t.x < st.width / 2 ? t.x + 90 : t.x - 90;
+        b.x = Math.max(b.w / 2, Math.min(st.width - b.w / 2, tx)); }
+      if (window.__bot) requestAnimationFrame(steer); }; requestAnimationFrame(steer); return true; })()`);
   const t0 = Date.now(); let lastScore = 0;
   while (Date.now() - t0 < 90000) {
-    const s = await js(`(() => { const st = window.__game.state; if (st.screen !== "playing") return { screen: st.screen, score: st.score, catches: st.catches };
-      const b = st.basket; const correct = st.objects.filter(o => o.kind === "correct").sort((p, q) => q.y - p.y)[0];
-      const threats = st.objects.filter(o => o.kind !== "correct" && o.y > b.y - 160);
-      let tx = correct ? correct.x : b.x;
-      for (const t of threats) if (Math.abs(t.x - tx) < 70) tx = t.x < st.width / 2 ? t.x + 90 : t.x - 90;
-      b.x = Math.max(b.w / 2, Math.min(st.width - b.w / 2, tx));
-      return { screen: st.screen, score: st.score, catches: st.catches, lives: st.lives }; })()`);
+    const s = await js(`({ screen: window.__game.state.screen, score: window.__game.state.score })`);
     if (s.screen !== "playing") break;
     lastScore = s.score;
-    await sleep(60);
+    await sleep(200);
   }
+  await js(`window.__bot = false`);
   const after = await js(`({ screen: window.__game.state.screen, score: window.__game.state.score, lives: window.__game.state.lives, catches: window.__game.state.catches })`);
   check("auto-play caught correct answers and scored", after.score > 0, JSON.stringify(after));
   check("level 1 cleared → level-up screen", after.screen === "levelup" && await js(`document.querySelector("#levelup-title").textContent === "Level 1 cleared!"`), JSON.stringify(after));

@@ -1,5 +1,7 @@
 # Deployment – GitHub Pages
 
+**Live:** https://reetika-k.github.io/equation-catcher/ (GitHub Pages from branch `main`, folder `/`; every merge to `main` republishes it).
+
 The game is a static site (no server, no secrets), so GitHub Pages hosts it for free.
 
 ## One-time setup
