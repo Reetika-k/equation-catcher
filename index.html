@@ -67,6 +67,10 @@
             <li><span class="step">3</span><span>Avoid wrong numbers and bombs.</span></li>
           </ol>
           <p class="best">Best score <strong id="best-start">0</strong></p>
+          <div class="coach-setup">
+            <label class="coach-toggle"><input type="checkbox" id="coach-adaptive" checked> <span><b>AI coach</b> picks equations at your level</span></label>
+            <button id="coach-reset" class="link-btn" type="button">Reset what it learned</button>
+          </div>
           <button id="btn-start" class="btn btn-primary">Start game</button>
           <p class="hint-line"><kbd>↵</kbd> to start</p>
         </div>
@@ -87,6 +91,7 @@
           <h2 id="over-title" class="modal-title">Game over</h2>
           <p id="over-reason" class="modal-sub"></p>
           <p id="over-answer" class="answer-line"></p>
+          <p id="over-coach" class="coach-insight hidden"></p>
           <dl class="stats-grid">
             <div><dt>Final score</dt><dd id="over-score">0</dd></div>
             <div><dt>Best</dt><dd id="over-best">0</dd></div>
@@ -131,6 +136,11 @@
           <svg viewBox="0 0 36 36" aria-hidden="true"><circle class="ring-bg" cx="18" cy="18" r="15.9"/><circle id="ring-fg" class="ring-fg" cx="18" cy="18" r="15.9"/></svg>
           <span id="hud-time" class="ring-text">60</span>
         </div>
+      </div>
+      <div class="stat stat-coach" title="The AI coach predicts your chance of solving this equation on the first try">
+        <span class="stat-label">AI coach</span>
+        <span id="hud-coach" class="stat-value num">–</span>
+        <span id="hud-coach-foot" class="stat-foot">chance to solve first try</span>
       </div>
     </aside>
 

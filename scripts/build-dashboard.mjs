@@ -4,6 +4,7 @@
 //                                               and a difficulty measurement with scripted players
 //   tests/results/unit-latest.tap               the latest logic-test run (node --test --test-reporter=tap)
 //   docs/TESTING.md                             the recorded browser play-test table and the findings
+//   src/coach.js, src/coach-training.js         the AI coach: offline training on simulated learners, evaluation, adaptation
 //   docs/screenshots/*.png                      a few screens, embedded
 // No dependencies, no network. The simulations are seeded, so every number here is reproducible.
 // Usage: npm run dashboard   (writes reports/dashboard.html, self-contained)
@@ -14,6 +15,9 @@ import { fileURLToPath } from "node:url";
 import { createGame, LEVELS, START_LIVES, POINTS_PER_CATCH } from "../src/game.js";
 import { makeEquation, makeChoices } from "../src/equations.js";
 import { mulberry32 } from "../src/rng.js";
+import { features, createCoach, chooseEquation, simulateAttempt, KINDS, KIND_LABEL, FEATURE_NAMES, TRUE_WEIGHTS, TARGET } from "../src/coach.js";
+import { trainCoach, TRAINING } from "../src/coach-training.js";
+import { COACH_PRIOR } from "../src/coach-prior.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const p = (...parts) => path.join(root, ...parts);
@@ -138,16 +142,43 @@ function bars(items, { height = 170, barW = 44, gap = 18, max = 1, fmt = (v) => 
 const table = (head, rows) => `<div class="scroll"><table><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</table></div>`;
 const colourOf = { 1: "#18e0aa", 2: "#36e4ff", 3: "#ff385c" };
 
+// ---------- 4. AI coach: training, evaluation, adaptation (seeded) ----------
+
+const coachRun = trainCoach();
+function adaptRun(skill, adaptive, seed) {
+  const coach = createCoach({ prior: COACH_PRIOR }), rng = mulberry32(seed); let solved = 0, n = 0;
+  for (let level = 1; level <= 3; level++) for (let i = 0; i < 40; i++) {
+    const cands = Array.from({ length: adaptive ? 5 : 1 }, () => { const eq = makeEquation(level, rng); const ch = makeChoices(eq, LEVELS[level - 1].decoys, rng); return { eq, f: features(eq, ch) }; });
+    const c = cands[adaptive ? chooseEquation(cands, coach) : 0];
+    const y = simulateAttempt(c.f, skill, rng); coach.update(c.f, y, c.eq.kind); solved += y; n++;
+  }
+  return solved / n;
+}
+const LEARNERS = [["weak learner", -1.5], ["average learner", 0], ["strong learner", 1.5]];
+const ADAPT_SEEDS = 40;
+const adaptation = LEARNERS.map(([name, skill]) => {
+  const avg = (adaptive) => { let t = 0; for (let k = 1; k <= ADAPT_SEEDS; k++) t += adaptRun(skill, adaptive, 500 + k); return t / ADAPT_SEEDS; };
+  return { name, skill, fixed: avg(false), adaptive: avg(true) };
+});
+
+function lineChart(series, { width = 640, height = 220, colour = "#36e4ff", label = "" } = {}) {
+  const pad = 40, lo = Math.min(...series), hi = Math.max(...series);
+  const X = (i) => pad + (i / (series.length - 1)) * (width - pad * 2), Y = (v) => height - pad - ((v - lo) / (hi - lo || 1)) * (height - pad * 2);
+  const d = series.map((v, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join("");
+  return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img"><rect width="${width}" height="${height}" fill="#1a2240" rx="10"/><path d="${d}" fill="none" stroke="${colour}" stroke-width="2.5"/><text x="${pad - 6}" y="${Y(hi) + 4}" text-anchor="end" font-size="10" fill="#8a94b8">${hi.toFixed(3)}</text><text x="${pad - 6}" y="${Y(lo) + 4}" text-anchor="end" font-size="10" fill="#8a94b8">${lo.toFixed(3)}</text><text x="${pad}" y="${height - 12}" font-size="10" fill="#8a94b8">epoch 1</text><text x="${width - pad}" y="${height - 12}" text-anchor="end" font-size="10" fill="#8a94b8">epoch ${series.length}</text><text x="${width / 2}" y="18" text-anchor="middle" font-size="11" fill="#e8eeff">${esc(label)}</text></svg>`;
+}
+
 // ---------- sections ----------
 
 const parts = [];
 const stamp = new Date().toISOString().slice(0, 16).replace("T", " ") + " UTC";
-parts.push(`<h1>Equation Catcher — Game dashboard</h1><p class="sub">Level design, a seeded audit of the equation generator, a measured difficulty curve with scripted players, the logic tests and the recorded browser play test. Generated ${stamp}; every figure is computed from the game's own code with fixed seeds or read from recorded files.</p>`);
+parts.push(`<h1>Equation Catcher — Game dashboard</h1><p class="sub">Level design, a seeded audit of the equation generator, a measured difficulty curve with scripted players, how the AI coach was trained and how well it adapts, the logic tests and the recorded browser play test. Generated ${stamp}; every figure is computed from the game's own code with fixed seeds or read from recorded files.</p>`);
 
 const totalEq = audit.reduce((s, a) => s + a.n, 0);
 parts.push(`<div class="grid">${[
   ["levels", LEVELS.length], ["equations audited", totalEq.toLocaleString()], ["stated answers correct", pct(audit.reduce((s, a) => s + a.answerOk, 0) / totalEq)], ["decoys that solve the equation", audit.reduce((s, a) => s + a.decoySolves, 0)],
   ["logic tests", unit ? `${unit.pass}/${unit.tests}` : "not run"], ["scripted tracker wins", pct(sims.tracker.won / GAMES)],
+  ["AI coach test accuracy", `${pct(coachRun.test.accuracy)} (baseline ${pct(coachRun.test.baselineAccuracy)})`],
 ].map(([k, v]) => `<div class="card stat"><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join("")}</div>`);
 
 // 1 level design
@@ -166,31 +197,48 @@ parts.push(`<h2>3. Difficulty, measured with scripted players (${GAMES} seeded g
   + table(["player", "games won", "lost on lives", "lost on time", "mean final score", ...LEVELS.map((l) => `L${l.level} clear rate`), ...LEVELS.map((l) => `L${l.level} mean time to clear`), ...LEVELS.map((l) => `L${l.level} lives lost per game`)], Object.entries(sims).map(([name, s]) => [esc(name), `${s.won} (${pct(s.won / GAMES)})`, s.lostLives, s.lostTime, Math.round(s.meanScore), ...s.per.map((x) => (x.reached ? `${pct(x.clearRate)} <span class="muted">of ${x.reached}</span>` : "—")), ...s.per.map((x) => (x.meanTime != null ? `${x.meanTime.toFixed(1)} s` : "—")), ...s.per.map((x) => (x.reached ? x.livesLostPerGame.toFixed(2) : "—"))]))
   + `<div class="row">${bars(LEVELS.map((l, i) => ({ label: `L${l.level}`, value: sims.tracker.per[i].clearRate })), { max: 1, fmt: (v) => pct(v), colours: (it) => colourOf[it.label[1]] })}${bars(LEVELS.map((l, i) => ({ label: `L${l.level}`, value: sims.tracker.per[i].meanTime || 0 })), { max: 60, fmt: (v) => (v ? `${v.toFixed(0)} s` : "—"), colours: (it) => colourOf[it.label[1]] })}${bars(LEVELS.map((l, i) => ({ label: `L${l.level}`, value: sims.tracker.per[i].livesLostPerGame })), { max: 3, fmt: (v) => v.toFixed(2), colours: (it) => colourOf[it.label[1]] })}</div><p class="muted">Tracker: clear rate · mean time to clear a level · lives lost per game, by level. Read the gaps between levels as the difficulty curve; the absolute values belong to a script, not a person.</p>`);
 
-// 4 logic tests
-parts.push(`<h2>4. Logic tests (no browser)</h2>`);
+// 4 AI coach
+{
+  const r = coachRun, wl = (x) => x.toFixed(2);
+  parts.push(`<h2>4. AI coach: how the model was trained</h2><p>The AI coach is a <b>logistic-regression model</b> that predicts the chance a player solves an equation on the first try, from ${FEATURE_NAMES.length} features: the equation's form (${KINDS.map((k) => KIND_LABEL[k]).join(", ")}), the size of the answer, the size of the coefficient, whether a decoy is only 1 away from the answer, and negative constants. In the game it does three things: it predicts the chance for every equation (shown in the HUD), it <b>learns from each first attempt</b> of the player (online gradient steps on a personal skill offset and the weights, saved in the browser), and it <b>picks each next equation</b> from ${5} fresh candidates so the predicted chance stays near ${pct(TARGET)}. It is trained offline first, so a new player starts from a sensible model (<code>npm run train</code> → <code>src/coach-prior.js</code>).</p>`
+    + `<div class="card"><b>Training data.</b> ${r.sizes.rows.toLocaleString()} first attempts from ${r.sizes.learners} <b>simulated learners</b> (${TRAINING.perLearner} equations each, all three levels). Each simulated learner has a hidden skill, and a hidden "true" difficulty per feature decides whether they solve an equation. Real players were not recorded; the simulation lets the dashboard check whether training recovers the true difficulties. The split is by learner: ${r.sizes.train.toLocaleString()} rows to train, ${r.sizes.test.toLocaleString()} rows from learners the model never saw to test. Batch gradient descent on the log loss with L2 regularisation, 400 epochs.</div>`
+    + `<div class="row">${lineChart(r.history, { label: "training log loss per epoch" })}</div>`
+    + table(["set", "rows", "accuracy", "baseline accuracy (always the majority)", "log loss", "baseline log loss"], [["train", r.train.n.toLocaleString(), pct(r.train.accuracy), pct(r.train.baselineAccuracy), r.train.logLoss.toFixed(3), r.train.baselineLogLoss.toFixed(3)], ["<b>test (unseen learners)</b>", r.test.n.toLocaleString(), `<b>${pct(r.test.accuracy)}</b>`, pct(r.test.baselineAccuracy), `<b>${r.test.logLoss.toFixed(3)}</b>`, r.test.baselineLogLoss.toFixed(3)]])
+    + `<p><b>What the model learned</b> compared with the hidden truth. Learned weights are smaller (the model does not know each learner's skill, so it averages over them), but the <b>difficulty order of the six equation forms is recovered exactly</b>: positive = easier, negative = harder.</p>`
+    + table(["feature", "learned weight", "true weight"], FEATURE_NAMES.map((n, i) => [esc(n), wl(r.w[i]), wl(TRUE_WEIGHTS[i])]))
+    + `<p><b>Calibration on the test set</b> (does "70 %" mean 70 %?):</p>`
+    + table(["predicted chance", "attempts", "mean predicted", "actually solved"], r.test.calibration.filter((b) => b.n).map((b) => [b.range, b.n, pct(b.predicted), pct(b.actual)]))
+    + `<p><b>Does adapting help?</b> Simulated learners play 120 equations (40 per level), averaged over ${ADAPT_SEEDS} seeds: with fixed random equations, or with the coach choosing among 5 candidates and learning online from each attempt. Target first-try rate: ${pct(TARGET)}.</p>`
+    + table(["learner", "first-try success, fixed equations", "first-try success, AI coach", "distance from the 70 % target: fixed → coach"], adaptation.map((a) => [a.name, pct(a.fixed), `<b>${pct(a.adaptive)}</b>`, `${pct(Math.abs(a.fixed - TARGET))} → ${pct(Math.abs(a.adaptive - TARGET))}`]))
+    + `<div class="row">${bars(adaptation.flatMap((a) => [{ label: a.name.split(" ")[0], sub: "fixed", value: a.fixed }, { label: a.name.split(" ")[0], sub: "coach", value: a.adaptive }]), { max: 1, fmt: (v) => pct(v), colours: (it) => (it.sub === "coach" ? "#18e0aa" : "#8a94b8") })}</div><p class="muted">Grey: fixed equations · green: AI coach. Within a level the coach can only choose between equations of that level, so the effect is a nudge, not a different game.</p>`);
+}
+
+// 5 logic tests
+parts.push(`<h2>5. Logic tests (no browser)</h2>`);
 parts.push(unit ? `<div class="card"><b>${unit.pass} of ${unit.tests} passed</b>, ${unit.fail} failed, ${unit.ms} ms, run ${esc(unit.when)} (<code>tests/results/unit-latest.tap</code>; regenerate with <code>npm run test:tap</code>).</div><ul>${unit.names.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : `<p class="muted">No logic-test record: run <code>npm run test:tap</code>.</p>`);
 
-// 5 browser play test (recorded)
-parts.push(`<h2>5. Browser play test (recorded in docs/TESTING.md)</h2>`);
+// 6 browser play test (recorded)
+parts.push(`<h2>6. Browser play test (recorded in docs/TESTING.md)</h2>`);
 if (playRows.length) {
   parts.push(`<p>Headless Chrome drives the real page with a seeded game (<code>?seed=7</code>). Recorded outcomes: ${playRuns.length ? esc(playRuns.join(" · ")) : "see docs/TESTING.md"}. The table is the recorded run as written in <code>docs/TESTING.md</code>; this dashboard does not launch a browser.</p>`
     + table(["#", "user action", "expected", "actual (recorded)", "status"], playRows.map((r) => [r.n, esc(r.action), esc(r.expected), esc(r.actual), r.status === "Pass" ? `<span class="ok">Pass</span>` : `<span class="bad">Fail</span>`])));
 } else parts.push(`<p class="muted">docs/TESTING.md not found or has no play-test table.</p>`);
 
-// 6 findings
-parts.push(`<h2>6. Findings and fixes recorded during testing</h2>`);
+// 7 findings
+parts.push(`<h2>7. Findings and fixes recorded during testing</h2>`);
 parts.push(findings.length ? table(["id", "problem (as recorded)", "type"], findings.map((f) => [`<b>${esc(f.id)}</b>`, esc(f.problem), esc(f.type)])) : `<p class="muted">none recorded</p>`);
 
-// 7 screens
-parts.push(`<h2>7. Screens</h2>${shots.length ? shots.map(img).join("") : `<p class="muted">No screenshots found.</p>`}`);
+// 8 screens
+parts.push(`<h2>8. Screens</h2>${shots.length ? shots.map(img).join("") : `<p class="muted">No screenshots found.</p>`}`);
 
-// 8 limitations
-parts.push(`<h2>8. Limitations</h2><div class="card"><ul>
+// 9 limitations
+parts.push(`<h2>9. Limitations</h2><div class="card"><ul>
 <li>The difficulty figures come from scripted players, not people; a human play-testing session (the brief's step 11) is still to be recorded.</li>
 <li>The browser play test is quoted from its recorded run; sound is verified only by the mute toggle.</li>
 <li>Decoy "closeness" is measured, not its effect on real players.</li>
+<li>The AI coach is trained on simulated learners; its accuracy on real players is not measured yet. In the game it keeps learning from each player's own attempts.</li>
 </ul></div>`);
-parts.push(`<h2>Reproduce</h2><div class="card"><code>npm test</code> → <code>npm run test:tap</code> (records the logic run) → <code>npm run dashboard</code> (seeded audit and simulations run inside the build, about 5 s). This file embeds its figures and screenshots.</div>`);
+parts.push(`<h2>Reproduce</h2><div class="card"><code>npm run train</code> (trains the AI coach, writes <code>src/coach-prior.js</code>) → <code>npm test</code> → <code>npm run test:tap</code> (records the logic run) → <code>npm run dashboard</code> (seeded audit and simulations run inside the build, about 5 s). This file embeds its figures and screenshots.</div>`);
 
 // ---------- write ----------
 

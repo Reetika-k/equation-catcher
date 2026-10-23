@@ -2,6 +2,7 @@
 // (catch, wrong, bomb, levelup, win, lose) that the UI turns into sound and effects.
 import { makeEquation, makeChoices } from "./equations.js";
 import { randInt, pick } from "./rng.js";
+import { features, chooseEquation } from "./coach.js";
 
 export const LEVELS = [
   { level: 1, name: "One-step equations", needed: 5, fallSpeed: 110, spawnEvery: 1.1, decoys: 2, bombChance: 0, time: 60 },
@@ -11,7 +12,10 @@ export const LEVELS = [
 export const START_LIVES = 3;
 export const POINTS_PER_CATCH = 10;
 
-export function createGame({ width = 480, height = 640, rng = Math.random } = {}) {
+export const CANDIDATES = 5; // equations the AI coach chooses between
+
+/** coach (optional): the AI coach from src/coach.js; adaptive: let it choose the equations. */
+export function createGame({ width = 480, height = 640, rng = Math.random, coach = null, adaptive = true } = {}) {
   const state = {
     screen: "start", // start | playing | levelup | won | lost
     width, height,
@@ -20,14 +24,33 @@ export function createGame({ width = 480, height = 640, rng = Math.random } = {}
     basket: { x: width / 2, y: height - 40, w: 96, h: 22, speed: 380 },
     objects: [], spawnTimer: 0, spawnsSinceCorrect: 0,
     events: [], lostReason: null, elapsed: 0,
+    adaptive: !!coach && adaptive, prediction: null, attempted: false, // AI coach: chance for this equation, first attempt done?
   };
 
   function config() { return LEVELS[state.level - 1]; }
 
   function newEquation() {
-    state.equation = makeEquation(state.level, rng);
-    state.choices = makeChoices(state.equation, config().decoys, rng);
+    if (coach && state.adaptive) {
+      // the AI coach picks, among a few fresh equations of this level, the one closest to its target chance
+      const cands = Array.from({ length: CANDIDATES }, () => { const eq = makeEquation(state.level, rng); const ch = makeChoices(eq, config().decoys, rng); return { eq, ch, f: features(eq, ch) }; });
+      const c = cands[chooseEquation(cands, coach)];
+      state.equation = c.eq; state.choices = c.ch;
+    } else {
+      state.equation = makeEquation(state.level, rng);
+      state.choices = makeChoices(state.equation, config().decoys, rng);
+    }
+    state.prediction = coach ? coach.predict(features(state.equation, state.choices)) : null;
+    state.attempted = false;
     state.spawnsSinceCorrect = 0;
+  }
+  /** First catch of a number for this equation = the player's first attempt; the coach learns from it. */
+  function recordAttempt(success) {
+    if (state.attempted || !state.equation) return;
+    state.attempted = true;
+    const f = features(state.equation, state.choices), y = success ? 1 : 0;
+    const predicted = coach ? coach.predict(f) : null;
+    if (coach) coach.update(f, y, state.equation.kind);
+    state.events.push({ type: "attempt", success, kind: state.equation.kind, predicted });
   }
 
   function beginLevel(n) {
@@ -71,6 +94,7 @@ export function createGame({ width = 480, height = 640, rng = Math.random } = {}
   }
 
   function caught(o) {
+    if (o.kind !== "bomb") recordAttempt(o.kind === "correct"); // bombs test reflexes, not maths
     if (o.kind === "correct") {
       state.score += POINTS_PER_CATCH * state.level;
       state.catches += 1;
@@ -128,5 +152,7 @@ export function createGame({ width = 480, height = 640, rng = Math.random } = {}
   /** Back to the start screen without starting a new game. */
   function menu() { state.screen = "start"; state.objects = []; }
 
-  return { state, start, restart: start, update, nextLevel, drainEvents, menu, LEVELS };
+  function setAdaptive(on) { state.adaptive = !!coach && !!on; }
+
+  return { state, start, restart: start, update, nextLevel, drainEvents, menu, setAdaptive, coach, LEVELS };
 }
