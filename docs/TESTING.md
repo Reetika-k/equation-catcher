@@ -10,7 +10,7 @@ Everything here was actually executed. Logic tests run in Node; the play test dr
 | Browser play test | Start screen, canvas, keyboard control, auto-play of Level 1, level-up, Level 2, pause, mute persistence, loss by time, game-over screen, restart, high score after reload, loss by lives, phone layout, JS errors | Headless Chrome via CDP | `npm run test:e2e` |
 | Manual | Full playthrough with mouse drag and touch on a phone, sound on, two browsers | `docs/DEMO_SCRIPT.md` | – |
 
-## 2. Logic tests (`npm test`) – 11 tests, 11 pass
+## 2. Logic tests (`npm test`) – 20 tests, 20 pass (11 game, 9 AI coach)
 
 - 600 generated equations (200 per level): the stated answer solves each one; no decoy ever does; answer and decoys are distinct
 - Level forms match the concept (one-step / two-step / both sides); seeded runs are reproducible and unseeded runs vary
@@ -19,6 +19,7 @@ Everything here was actually executed. Logic tests run in Node; the play test dr
 - Timer at 0 → lost (reason "time")
 - Clearing a level adds the time bonus; three level-ups → won; restart returns to level 1 with score 0
 - A correct number is guaranteed within three spawns; objects past the bottom are removed and a missed correct answer emits an event
+- AI coach (`tests/coach.test.mjs`): features are valid; training lowers the loss and beats the baseline on unseen learners; it recovers the difficulty order of the six forms; the shipped weights match a fresh run; wrong first attempts lower the prediction and right ones raise it; the adaptive choice picks the candidate nearest the target; in the game only the first catch per equation counts and bombs do not; adapting helps a weak simulated learner; the dataset is reproducible
 
 ## 3. Browser play test scenarios (`npm run test:e2e`)
 
@@ -41,6 +42,8 @@ Everything here was actually executed. Logic tests run in Node; the play test dr
 | 15 | Catch three wrong numbers | "You ran out of lives.", hearts empty | As expected | Pass |
 | 16 | Resize to phone width (390 px) | Touch buttons visible, no horizontal overflow | As expected | Pass |
 | 17 | Whole run | No JavaScript errors or exceptions | None | Pass |
+| 18 | Start a game (AI coach on) | HUD shows the coach's first-try chance and "adapting" | `65%`, "chance to solve first try · adapting" (2026-10-23) | Pass |
+| 19 | After a game | The coach saved what it learned; game-over card names the hardest form | Saved model with attempts > 0; insight shown, e.g. "hardest for you is x − a = b (71 %)" | Pass |
 
 Run 1 (2026-09-28 22:08): **17 / 18** – scenario 8 failed because the test read the HUD label a few milliseconds after Level 2 began, before the next animation frame had updated it; the game state was already at level 2. Run 2 (22:11, after making the check wait for the frame): **18 / 18**. Screenshots from run 2: `docs/screenshots/02-playing.png`, `03-levelup.png`, `04-gameover.png`, `05-mobile.png`.
 

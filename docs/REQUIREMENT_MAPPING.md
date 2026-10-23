@@ -20,6 +20,7 @@ Requirements are taken from the PDF's Project 2 section (objective, steps 1–12
 | Sound with mute option (Step 10) | Web Audio synthesised sounds; M key and 🔊 button; remembered | `audio.js` | B (mute persisted) |
 | Test the game (Step 11) | Logic tests + automated browser play-through + manual demo | `tests/` | – |
 | Online hosting / public URL (Step 12) | Live on GitHub Pages: https://reetika-k.github.io/equation-catcher/ | `docs/DEPLOYMENT.md` | B (18/18 against the live site) |
+| AI component (added) | AI coach: logistic regression trained offline on simulated learners, online learning from each first attempt, adaptive equation choice, insight on game over | `src/coach.js`, `src/coach-training.js`, `scripts/train-coach.mjs`, dashboard section 4 | L (9 coach tests), B (HUD prediction, saved model) |
 | Game instructions | Start screen and README | `index.html`, `README.md` | B |
 | Project explanation | Report and docs | `docs/CAPSTONE_DOCUMENTATION.md` | – |
 | Live gameplay demonstration | Script | `docs/DEMO_SCRIPT.md` | M |

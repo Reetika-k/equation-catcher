@@ -38,6 +38,7 @@ try {
   check("Start → playing, HUD shows Level 1 and 3 lives", await js(`document.querySelector("#hud-level").textContent === "Level 1" && document.querySelector("#hud-lives").textContent === "♥♥♥" && document.querySelector("#hud").offsetParent !== null`));
   const eq = await js(`window.__game.state.equation.text`);
   check("an equation is shown", /=/.test(eq), eq);
+  check("AI coach: HUD shows its predicted first-try chance and that it is adapting", await js(`/^\\d+%$/.test(document.querySelector("#hud-coach").textContent) && /adapting/.test(document.querySelector("#hud-coach-foot").textContent)`), await js(`document.querySelector("#hud-coach").textContent`));
 
   const x0 = await js(`window.__game.state.basket.x`);
   await holdUntil("ArrowRight", "ArrowRight", `window.__game.state.basket.x > ${x0} + 5`);
@@ -90,6 +91,7 @@ try {
   await sleep(300);
   const over = await js(`({ title: document.querySelector("#over-title").textContent, reason: document.querySelector("#over-reason").textContent, score: document.querySelector("#over-score").textContent, best: document.querySelector("#over-best").textContent, visible: !document.querySelector("#screen-over").classList.contains("hidden") })`);
   check("game over screen: reason, final score, highest score, restart", over.visible && /Time ran out/.test(over.reason) && Number(over.score) > 0 && Number(over.best) >= Number(over.score), JSON.stringify(over));
+  check("AI coach learned from this game: attempts saved in the browser, insight on the game-over card", await js(`(() => { const c = JSON.parse(localStorage.getItem("equation-catcher.coach") || "null"); const el = document.querySelector("#over-coach"); return !!c && c.attempts > 0 && (el.classList.contains("hidden") || /AI coach/.test(el.textContent)); })()`), await js(`localStorage.getItem("equation-catcher.coach")?.slice(0, 80)`));
   await shot("04-gameover.png");
   await js(`document.querySelector("#btn-restart").click()`);
   await waitFor(`window.__game.state.screen === "playing"`, "restart");

@@ -48,6 +48,7 @@ A single-page canvas game with: an equation banner; falling number bubbles (corr
 8. Visual design (UI/UX pass, `docs/DESIGN.md`): responsive game shell with help, play area and live stats; modal cards for every screen; timer ring, progress bar, hearts that react; sky with sun and hills, gradient number bubbles, woven basket that tilts; particles, screen shake, floating score text; Fredoka/Nunito type system; reduced-motion and keyboard support
 9. Reproducible games via `?seed=` for testing and demos
 10. Hosted as a static site (GitHub Pages)
+11. **AI coach (machine learning):** a logistic-regression model trained offline on 9,600 attempts from simulated learners (72 % test accuracy on unseen learners vs a 62 % baseline) predicts each equation's first-try chance, learns online from the player's own first attempts, and chooses the next equation to keep that chance near 70 %; the game-over card names the player's hardest equation form
 
 ## 7. Solution architecture
 
@@ -59,6 +60,7 @@ main.js  — game loop (requestAnimationFrame), input state, screens, effects, h
 game.js  — pure game state: levels, spawning, movement, catch detection, lives, timer
   ↓ uses                                    ↓
 equations.js — equation + decoy generator  audio.js — Web Audio sounds
+coach.js — AI coach (predict · learn online · choose the next equation; weights from coach-prior.js, trained by scripts/train-coach.mjs)
 rng.js — seedable random numbers           render.js — canvas drawing
   ↓
 index.html / style.css — canvas, HUD, overlays, responsive layout
@@ -66,7 +68,7 @@ index.html / style.css — canvas, HUD, overlays, responsive layout
 GitHub Pages (static hosting)
 ```
 
-The separation matters: `game.js` and `equations.js` have no DOM access, so 11 automated tests exercise scoring, lives, levels, timer, win/loss and restart without a browser; the browser play test then checks the real page.
+The separation matters: `game.js` and `equations.js` have no DOM access, so 20 automated tests exercise scoring, lives, levels, timer, win/loss, restart and the AI coach (training, online learning, adaptive choice) without a browser; the browser play test then checks the real page.
 
 ## 8. Tools and technologies
 
@@ -76,7 +78,7 @@ The separation matters: `game.js` and `equations.js` have no DOM access, so 11 a
 | Game technologies | HTML5 Canvas, CSS, JavaScript ES modules, Web Audio API, localStorage |
 | Testing | `node:test` logic tests; headless Chrome driven over the DevTools Protocol for the play test |
 | Hosting | GitHub Pages (static); Netlify/Vercel also possible |
-| AI at runtime | None (deliberately: keeps hosting free and the game offline-capable) |
+| AI at runtime | AI coach: logistic regression in plain JavaScript, trained offline (`npm run train`) and updated online in the browser; no server or API, so hosting stays free and the game works offline |
 
 ## 9. Working prototype
 
@@ -91,7 +93,7 @@ All prompts to the coding assistant, with what they produced and what broke, are
 
 ## 11. Testing report
 
-Two layers, both actually executed: 11 logic tests (`npm test`, all pass) and an 18-check browser play test (`npm run test:e2e`; run 1: 17/18 with a timing race in the test itself, run 2: 18/18; after the redesign run 3: 17/18 from an outdated test expectation, run 4: 18/18) that starts a seeded game, presses the controls, auto-plays Level 1, and checks level-up, pause, mute, both loss conditions, restart, the saved high score and the phone layout. The scenario table with expected and actual results, and the bugs found, are in `docs/TESTING.md`.
+Two layers, both actually executed: 20 logic tests (`npm test`, all pass; 9 of them for the AI coach) and a browser play test, now 20 checks including the AI coach's HUD prediction and what it saved after a game (18 checks before the coach) (`npm run test:e2e`; run 1: 17/18 with a timing race in the test itself, run 2: 18/18; after the redesign run 3: 17/18 from an outdated test expectation, run 4: 18/18) that starts a seeded game, presses the controls, auto-plays Level 1, and checks level-up, pause, mute, both loss conditions, restart, the saved high score and the phone layout. The scenario table with expected and actual results, and the bugs found, are in `docs/TESTING.md`.
 
 ## 12. Challenges and solutions
 
@@ -108,11 +110,11 @@ Two layers, both actually executed: 11 logic tests (`npm test`, all pass) and an
 
 ## 13. Final outcome
 
-A complete, tested browser game meeting every expected outcome in the PDF (objective, controls, scoring, challenges, three levels, win/loss, restart, visuals, instructions, hosting configuration), built with incremental AI-assisted prompts and verified by automated logic and browser tests. Key learnings: separate logic from drawing so it can be tested; make randomness seedable; test after every step; describe bugs precisely to the assistant.
+A complete, tested browser game meeting every expected outcome in the PDF (objective, controls, scoring, challenges, three levels, win/loss, restart, visuals, instructions, hosting configuration), built with incremental AI-assisted prompts and verified by automated logic and browser tests. An AI coach adds machine learning: a model trained offline, evaluated on unseen learners, and personalised online for each player. Key learnings: separate logic from drawing so it can be tested; make randomness seedable; test after every step; describe bugs precisely to the assistant.
 
 ## 14. Future enhancements
 
-Leaderboard (needs a small backend), power-ups (slow-motion, wider basket), achievements and badges, AI-generated word problems as a bonus level, a two-player split-screen mode, more equation types (brackets, fractions), and a teacher mode that logs which equations were missed.
+Leaderboard (needs a small backend), power-ups (slow-motion, wider basket), achievements and badges, AI-generated word problems as a bonus level, a two-player split-screen mode, more equation types (brackets, fractions), a teacher mode that logs which equations were missed, and measuring the AI coach on real players (the current training data is simulated).
 
 ## 15. Project demo
 

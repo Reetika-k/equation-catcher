@@ -3,6 +3,8 @@ import { createGame, LEVELS } from "./game.js";
 import { draw } from "./render.js";
 import { audio } from "./audio.js";
 import { mulberry32 } from "./rng.js";
+import { createCoach } from "./coach.js";
+import { COACH_PRIOR } from "./coach-prior.js";
 
 const BEST_KEY = "equation-catcher.best";
 const $ = (s) => document.querySelector(s);
@@ -12,7 +14,11 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 // ?seed=123 makes a reproducible game (used by the automated browser test and for demos)
 const seedParam = new URLSearchParams(location.search).get("seed");
 const rng = seedParam ? mulberry32(Number(seedParam) || 1) : Math.random;
-const game = createGame({ width: canvas.width, height: canvas.height, rng });
+// AI coach: starts from the offline-trained model, keeps learning from this player (saved in this browser).
+const COACH_KEY = "equation-catcher.coach", ADAPT_KEY = "equation-catcher.adaptive";
+const store = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+const coach = createCoach({ prior: COACH_PRIOR, saved: store.get(COACH_KEY) });
+const game = createGame({ width: canvas.width, height: canvas.height, rng, coach, adaptive: store.get(ADAPT_KEY) !== false });
 const { state } = game;
 
 const fx = { particles: [], floats: [], shake: 0, tilt: 0, t: 0, clouds: [{ x: 40, y: 150, s: 1, speed: 8 }, { x: 260, y: 210, s: 0.7, speed: 12 }, { x: 380, y: 125, s: 0.85, speed: 6 }] };
@@ -36,7 +42,15 @@ function onLevelUp(ev) {
   $("#btn-next").textContent = next ? "Next level" : "See result";
   show("levelup");
 }
+function coachInsight() {
+  const i = coach.insight(), el = $("#over-coach");
+  if (!i || i.hardest.kind === i.easiest.kind) { el.classList.add("hidden"); return; }
+  const pct = (x) => `${Math.round(x * 100)}%`;
+  el.innerHTML = `<b>AI coach</b> (learned from ${i.attempts} attempt${i.attempts === 1 ? "" : "s"}): hardest for you is <b>${i.hardest.label}</b> (${pct(i.hardest.chance)} first-try chance), easiest is <b>${i.easiest.label}</b> (${pct(i.easiest.chance)}).`;
+  el.classList.remove("hidden");
+}
 function onGameEnd(won, reason) {
+  coachInsight();
   const b = Math.max(best.get(), state.score); best.set(b);
   $("#over-title").textContent = won ? "You win!" : "Game over";
   $("#over-reason").textContent = won ? `All ${LEVELS.length} levels cleared with ${state.lives} ${state.lives === 1 ? "life" : "lives"} left.` : reason === "time" ? "Time ran out." : "You ran out of lives.";
@@ -55,7 +69,7 @@ addEventListener("keydown", (e) => {
   if (keys[e.key]) { input[keys[e.key]] = true; input.targetX = undefined; e.preventDefault(); }
   if (e.key === "p" || e.key === "P") togglePause();
   if (e.key === "m" || e.key === "M") setMute(audio.toggle());
-  if (e.key === "Enter" || e.key === " ") { if (state.screen === "start") startGame(); else if (state.screen === "levelup") advance(); else if (state.screen === "won" || state.screen === "lost") startGame(); }
+  if ((e.key === "Enter" || e.key === " ") && !(e.target instanceof HTMLInputElement)) { if (state.screen === "start") startGame(); else if (state.screen === "levelup") advance(); else if (state.screen === "won" || state.screen === "lost") startGame(); }
 });
 addEventListener("keyup", (e) => { if (keys[e.key]) input[keys[e.key]] = false; });
 const hold = (id, dir) => { const el = $(id); const on = (e) => { e.preventDefault(); input[dir] = true; input.targetX = undefined; }; const off = () => { input[dir] = false; }; el.addEventListener("pointerdown", on); el.addEventListener("pointerup", off); el.addEventListener("pointercancel", off); el.addEventListener("pointerleave", off); };
@@ -89,6 +103,7 @@ function handleEvents() {
     else if (ev.type === "wrong") { session.wrong++; audio.play("wrong"); if (!reduceMotion) fx.shake = 1; burst(ev.x, ev.y, "#ef4444", 10); float(ev.x, ev.y - 20, "✗", "#b91c1c"); hitHearts(); }
     else if (ev.type === "bomb") { session.wrong++; audio.play("bomb"); if (!reduceMotion) fx.shake = 1.6; burst(ev.x, ev.y, "#111827", 22); float(ev.x, ev.y - 20, "BOOM", "#b91c1c"); hitHearts(); }
     else if (ev.type === "miss") { audio.play("miss"); }
+    else if (ev.type === "attempt") { store.set(COACH_KEY, coach.toJSON()); }
     else if (ev.type === "levelup") { audio.play("levelup"); onLevelUp(ev); }
     else if (ev.type === "win") { onGameEnd(true); }
     else if (ev.type === "lose") { onGameEnd(false, ev.reason); }
@@ -105,6 +120,10 @@ function updateHud() {
   const pct = state.needed ? Math.min(100, Math.round((state.catches / state.needed) * 100)) : 0;
   $("#hud-progress").style.width = pct + "%"; $(".progress").setAttribute("aria-valuenow", pct);
   $("#hud-catches").textContent = `${state.catches} / ${state.needed || LEVELS[0].needed} caught`;
+  const pc = state.screen === "playing" && state.prediction != null ? state.prediction : null, hc = $("#hud-coach");
+  hc.textContent = pc == null ? "–" : `${Math.round(pc * 100)}%`;
+  hc.classList.toggle("low", pc != null && pc < 0.5); hc.classList.toggle("high", pc != null && pc >= 0.8);
+  $("#hud-coach-foot").textContent = state.adaptive ? `chance to solve first try · adapting` : "chance to solve first try";
   const total = LEVELS[state.level - 1]?.time || 60, left = state.screen === "start" ? total : state.timeLeft; // end screens freeze the final value
   const t = $("#hud-time"); t.textContent = Math.ceil(left);
   ringFg.style.strokeDashoffset = String(100 - Math.max(0, Math.min(100, (left / total) * 100)));
@@ -130,6 +149,9 @@ function frame(now) {
 }
 
 $("#best-start").textContent = best.get();
+$("#coach-adaptive").checked = state.adaptive;
+$("#coach-adaptive").addEventListener("change", (e) => { game.setAdaptive(e.target.checked); store.set(ADAPT_KEY, e.target.checked); });
+$("#coach-reset").addEventListener("click", () => { const fresh = createCoach({ prior: COACH_PRIOR }); Object.assign(coach, { w: fresh.w, skill: 0, attempts: 0, solved: 0, byKind: fresh.byKind }); store.set(COACH_KEY, coach.toJSON()); $("#coach-reset").textContent = "Reset ✓"; });
 setMute(audio.muted);
 show("start");
 updateHud();

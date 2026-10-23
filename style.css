@@ -109,6 +109,14 @@ canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; border-
 .touch { display: none; flex: 1; height: 60px; font-size: 26px; border: 0; border-radius: 16px; background: rgba(255,255,255,.92); color: var(--ink); box-shadow: 0 4px 0 rgba(0,0,0,.28); user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 .touch:active { background: var(--accent-100); transform: translateY(2px); }
 
+/* ---------- AI coach ---------- */
+.coach-setup { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0 0 14px; }
+.coach-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.coach-toggle input { width: 18px; height: 18px; accent-color: var(--accent, #0f766e); }
+.link-btn { background: none; border: 0; padding: 2px 4px; font-size: 12.5px; color: var(--ink-3); text-decoration: underline; cursor: pointer; }
+.coach-insight { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2, #f1f5f9); font-size: 13.5px; line-height: 1.45; color: var(--ink-2); text-align: left; }
+.stat-coach .stat-value.low { color: #b91c1c; } .stat-coach .stat-value.high { color: #0f766e; }
+
 /* ---------- responsive: tablet & phone ---------- */
 @media (max-width: 1023px) {
   .shell { grid-template-columns: minmax(0, 1fr); grid-template-areas: "brand" "right" "play" "foot"; gap: 12px; padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); }
@@ -118,6 +126,7 @@ canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; border-
   .panel-right { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
   .stat { padding: 8px 10px; border-radius: 12px; gap: 2px; align-items: center; text-align: center; }
   .stat-value { font-size: 17px; } .stat-foot, .progress { display: none; } .hearts { font-size: 18px; letter-spacing: 1px; }
+  .stat-coach { grid-column: 1 / -1; flex-direction: row; justify-content: center; gap: 8px; padding: 6px 10px; } .stat-coach .stat-value { font-size: 15px; }
   .ring { width: 44px; height: 44px; } .ring-text { font-size: 15px; } .ring-bg, .ring-fg { stroke-width: 4; }
   .play { max-width: 100%; }
   .controls { gap: 10px; } .hint { display: none; } .touch { display: block; }
