@@ -1,6 +1,6 @@
 # Capstone Project Submission Report – Equation Catcher
 
-Structure follows the 15-section *Project Submission Report template* in the IIT Patna B3 Capstone guidelines.
+Structure follows the 15-section *Project Submission Report template* in the IIT Patna B3 Capstone guidelines. A PDF of this report is in `docs/Equation_Catcher_Capstone_Submission.pdf` (rebuild with `npm run submission`).
 
 ## 1. Cover page
 
@@ -11,10 +11,13 @@ Structure follows the 15-section *Project Submission Report template* in the IIT
 | **Mobile number** | 9694228896 |
 | **Project title** | Equation Catcher – Vibe Coding Challenge: Build and Host Your Own Online Video Game |
 | **Capstone track** | Project 2: Build and Host a Video Game |
+| **Play online** | https://reetika-k.github.io/equation-catcher/ |
+| **Game dashboard** | https://reetika-k.github.io/equation-catcher/reports/dashboard.html |
+| **Repository** | https://github.com/Reetika-k/equation-catcher |
 
 ## 2. Project overview
 
-Equation Catcher is a browser game built entirely with HTML, CSS and JavaScript using an AI coding assistant (Claude Code) and incremental "vibe coding" prompts. The player catches the falling number that solves the equation shown at the top, across three levels of increasing difficulty, with lives, a timer, scoring, win and loss conditions, restart, sound and touch controls. The objective of the project is to show that an idea can be turned into a finished, tested, hosted software product by describing features clearly to an AI assistant, testing after every change and fixing what breaks.
+Equation Catcher is a browser game built entirely with HTML, CSS and JavaScript using an AI coding assistant and incremental "vibe coding" prompts. The player catches the falling number that solves the equation shown at the top, across three levels of increasing difficulty, with lives, a timer, scoring, win and loss conditions, restart, sound and touch controls. The objective of the project is to show that an idea can be turned into a finished, tested, hosted software product by describing features clearly to an AI assistant, testing after every change and fixing what breaks.
 
 ## 3. Problem statement
 
@@ -74,7 +77,7 @@ The separation matters: `game.js` and `equations.js` have no DOM access, so 20 a
 
 | Category | Used |
 |---|---|
-| Development | Claude Code (vibe coding), VS Code, Node.js 25 for tests and the local server |
+| Development | AI coding assistant (vibe coding), VS Code, Node.js 25 for tests and the local server |
 | Game technologies | HTML5 Canvas, CSS, JavaScript ES modules, Web Audio API, localStorage |
 | Testing | `node:test` logic tests; headless Chrome driven over the DevTools Protocol for the play test |
 | Hosting | GitHub Pages (static); Netlify/Vercel also possible |
@@ -84,8 +87,23 @@ The separation matters: `game.js` and `equations.js` have no DOM access, so 20 a
 
 - Local: `npm start` → http://localhost:8080
 - Public URL: https://reetika-k.github.io/equation-catcher/ (game dashboard: https://reetika-k.github.io/equation-catcher/reports/dashboard.html)
-- Screenshots (headless Chrome): first version `docs/screenshots/01-start.png` … `05-mobile.png`; redesigned version `06-desktop-start.png`, `07-phone-start.png`, `08-desktop-playing.png`, `09-desktop-gameover.png` (the play-test captures 02–05 are regenerated on the new design)
 - Demo flow: `docs/DEMO_SCRIPT.md`
+- Screenshots below are from the live site (2026-10-24); more in `docs/screenshots/`.
+
+![Start screen](screenshots/06-desktop-start.png)
+*Start screen: how to play, controls, the three levels, and the AI coach switch.*
+
+![Playing](screenshots/08-desktop-playing.png)
+*Playing Level 1: catch the number that solves x + 4 = 14. The AI coach panel shows the predicted chance of solving it on the first try.*
+
+![Level cleared](screenshots/03-levelup.png)
+*Level cleared, with the time bonus (phone layout).*
+
+![Game over with the AI coach insight](screenshots/04-gameover.png)
+*Game over: the missed answer, the score, and what the AI coach learned about which equation form is hardest for this player.*
+
+![Dashboard: how the AI coach was trained](screenshots/10-dashboard.png)
+*Game dashboard: how the AI coach was trained (loss curve, accuracy on unseen learners vs the baseline, learned vs true difficulty).*
 
 ## 10. Prompts used
 
@@ -120,4 +138,5 @@ Leaderboard (needs a small backend), power-ups (slow-motion, wider basket), achi
 
 - Demo script: `docs/DEMO_SCRIPT.md`
 - Public URL: https://reetika-k.github.io/equation-catcher/
+- Game dashboard: https://reetika-k.github.io/equation-catcher/reports/dashboard.html
 - Repository: https://github.com/Reetika-k/equation-catcher

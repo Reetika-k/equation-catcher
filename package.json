@@ -9,7 +9,8 @@
     "test:tap": "node --test --test-reporter=tap --test-reporter-destination=tests/results/unit-latest.tap tests/game.test.mjs tests/coach.test.mjs",
     "dashboard": "node scripts/build-dashboard.mjs",
     "test:e2e": "node tests/e2e-browser.mjs",
-    "train": "node scripts/train-coach.mjs"
+    "train": "node scripts/train-coach.mjs",
+    "submission": "node scripts/build-submission.mjs"
   },
   "engines": {
     "node": ">=20"
