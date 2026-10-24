@@ -93,7 +93,7 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>
   figure { margin: 10px 0 14px; break-inside: avoid; text-align: center; }
   figure img { max-width: 100%; max-height: 118mm; border: 1px solid #c9d1de; border-radius: 6px; }
   figcaption { font-size: 9pt; color: #4a536b; margin-top: 4px; }
-  .cover { height: 260mm; display: flex; flex-direction: column; break-after: page; }
+  .cover { height: 258mm; overflow: hidden; display: flex; flex-direction: column; break-after: page; }
   .cover .band { background: ${CONFIG.colours.band}; color: #fff; border-radius: 10px; padding: 26px 26px 22px; }
   .cover .eyebrow { letter-spacing: .18em; text-transform: uppercase; font-size: 9pt; color: #7fe9ff; margin: 0 0 6px; }
   .cover h1 { font-size: 34pt; margin: 0; letter-spacing: .04em; color: ${CONFIG.colours.accent}; }
@@ -101,7 +101,9 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>
   .cover .note { font-size: 9pt; color: #b8bfe6; margin: 12px 0 0; }
   .cover table.kv td:first-child { width: 34%; background: #f4f7fb; }
   .cover table.kv { font-size: 10pt; margin-top: 16px; }
-  .cover figure { margin-top: auto; } .cover figure img { max-height: 92mm; }
+  /* the hero takes whatever height the cover has left, so a long cover table never pushes it onto page 2 */
+  .cover figure { flex: 1 1 0; min-height: 0; margin: 14px 0 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+  .cover figure img { flex: 0 1 auto; min-height: 0; max-height: 92mm; max-width: 100%; object-fit: contain; }
 </style></head><body>
 <section class="cover">
   <div class="band"><p class="eyebrow">${esc(CONFIG.eyebrow)}</p><h1>${esc(CONFIG.title)}</h1>
