@@ -1,6 +1,8 @@
 # Equation Catcher
 
 > **Play online:** https://reetika-k.github.io/equation-catcher/ · **Game dashboard:** https://reetika-k.github.io/equation-catcher/reports/dashboard.html · **Repository:** https://github.com/Reetika-k/equation-catcher
+>
+> **Submission report (PDF):** [docs/Equation_Catcher_Capstone_Submission.pdf](docs/Equation_Catcher_Capstone_Submission.pdf), built from [docs/CAPSTONE_DOCUMENTATION.md](docs/CAPSTONE_DOCUMENTATION.md) with `npm run submission`.
 
 **Vibe Coding Challenge capstone – a browser game built and hosted with HTML, CSS and JavaScript.**
 IIT Patna AI/ML capstone, Project 2: *Vibe Coding Challenge: Build and Host Your Own Online Video Game*.
