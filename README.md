@@ -90,4 +90,4 @@ Static site: any host works. GitHub Pages steps are in [docs/DEPLOYMENT.md](docs
 
 ## Credits
 
-Built with Claude Code as the coding assistant; every prompt and fix is logged in [docs/VIBE_CODING.md](docs/VIBE_CODING.md).
+Built with an AI coding assistant; every prompt and fix is logged in [docs/VIBE_CODING.md](docs/VIBE_CODING.md).

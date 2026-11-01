@@ -1,6 +1,6 @@
 # Vibe coding log – prompts used and what happened
 
-The PDF asks for incremental prompts ("add a score counter", then "add three enemies") rather than "build me an amazing game". This log records the instructions given to the AI coding assistant (Claude Code) for each step, what it produced, what was tested, and what broke. Entries are appended as the project progresses.
+The PDF asks for incremental prompts ("add a score counter", then "add three enemies") rather than "build me an amazing game". This log records the instructions given to the AI coding assistant for each step, what it produced, what was tested, and what broke. Entries are appended as the project progresses.
 
 ## Step 1 – Concept
 
